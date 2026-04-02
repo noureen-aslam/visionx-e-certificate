@@ -20,7 +20,17 @@ export async function sendEmail(email, pdfBuffer) {
     throw new Error('pdfBuffer must be a Buffer');
   }
 
+  const required = ['GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 'GMAIL_REFRESH_TOKEN', 'GMAIL_EMAIL'];
+  for (const key of required) {
+    if (!process.env[key]) {
+      throw new Error(`Missing ${key} in environment (set it on Render)`);
+    }
+  }
+
   const accessToken = await oAuth2Client.getAccessToken();
+  if (!accessToken?.token) {
+    throw new Error('Gmail OAuth failed — check GMAIL_REFRESH_TOKEN and OAuth credentials on Render');
+  }
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',

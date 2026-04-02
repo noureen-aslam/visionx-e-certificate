@@ -2,9 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import fsPromises from 'fs/promises';
-import os from 'os';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer';
 import QRCode from 'qrcode';
 import dotenv from 'dotenv';
@@ -15,8 +14,19 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const PORT = Number(process.env.PORT) || 5000;
+
 const app = express();
-app.use(cors());
+
+// ✅ CORS setup — allows your Vercel frontend to call the backend
+app.use(
+  cors({
+    origin: '*', // allow all origins; you can restrict to your Vercel domain later
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+
 app.use(express.json());
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
@@ -56,25 +66,43 @@ async function waitForImagesReady(page) {
   );
 }
 
-function injectAssetsBaseHref(html) {
-  const baseHref = pathToFileURL(path.join(__dirname, 'public', 'assets') + path.sep).href;
-  if (html.includes('<base ')) return html;
-  return html.replace('<head>', `<head>\n  <base href="${baseHref}" />`);
+/** Embed signature PNGs as data URLs so PDF render works on Render without self-HTTP fetches. */
+async function inlineSignatureImages(html) {
+  const files = ['signature-smitha.png', 'signature-suhaib.png', 'signature-noureen.png'];
+  let out = html;
+  for (const file of files) {
+    const assetPath = path.join(__dirname, 'public', 'assets', file);
+    try {
+      const buf = await fsPromises.readFile(assetPath);
+      const b64 = buf.toString('base64');
+      out = out.replaceAll(`{{assetOrigin}}/assets/${file}`, `data:image/png;base64,${b64}`);
+    } catch (e) {
+      console.error('Missing signature asset:', file, e.message);
+      throw new Error(`Certificate asset not found: ${file}`);
+    }
+  }
+  return out;
 }
 
-async function renderPdfFromCertificateHtml(html) {
-  const htmlWithBase = injectAssetsBaseHref(html);
-  const tmpPath = path.join(
-    os.tmpdir(),
-    `cert-render-${Date.now()}-${crypto.randomBytes(8).toString('hex')}.html`,
-  );
-  await fsPromises.writeFile(tmpPath, htmlWithBase, 'utf8');
-  const fileUrl = pathToFileURL(tmpPath).href;
+async function renderPdfFromHtml(html) {
+  console.log('Launching browser...');
+  const launchOptions = {
+    headless: true,
+    args: [
+      '--no-sandbox',            // ✅ required for Render
+      '--disable-setuid-sandbox',// ✅ required for Render
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  };
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
 
-  const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await puppeteer.launch(launchOptions);
+  const page = await browser.newPage();
   try {
-    const page = await browser.newPage();
-    await page.goto(fileUrl, { waitUntil: 'load' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 120_000 });
     await waitForImagesReady(page);
     await page.evaluate(
       () =>
@@ -83,41 +111,40 @@ async function renderPdfFromCertificateHtml(html) {
         }),
     );
 
+    console.log('Generating PDF...');
     const pdfBuffer = await page.pdf({
       format: 'A4',
       landscape: true,
       printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      pageRanges: '1',
     });
 
     return pdfBuffer;
   } finally {
     await browser.close();
-    await fsPromises.unlink(tmpPath).catch(() => {});
   }
 }
 
 async function generateCertificateBuffer({ name, eventDetails = {}, date = '1st April 2026', certificateId }) {
   const id = certificateId || crypto.randomUUID();
+  const verificationUrl = `https://verify.visionxclub.tech/certificate/${id}`;
+
+  console.log('Generating QR...');
+  const qrCode = await QRCode.toDataURL(verificationUrl);
+
   const templatePath = path.join(__dirname, 'certificate-template.html');
   let templateHtml = await fsPromises.readFile(templatePath, 'utf8');
 
   const eventDetailsHtml = serializeEventDetails(eventDetails);
-  const qrSvg = await QRCode.toString(`https://visionx-club.in/certificate/${id}`, {
-    type: 'svg',
-    margin: 0,
-    width: 112,
-    color: { dark: '#0a2f74', light: '#00000000' },
-  });
 
   templateHtml = templateHtml
     .replace(/{{\s*name\s*}}/g, () => escapeHtml(name))
     .replace(/{{\s*eventDetails\s*}}/g, () => eventDetailsHtml)
     .replace(/{{\s*date\s*}}/g, () => escapeHtml(date))
-    .replace(/{{\s*qrSvg\s*}}/g, () => qrSvg);
+    .replace(/{{\s*qrCode\s*}}/g, () => qrCode);
 
-  return renderPdfFromCertificateHtml(templateHtml);
+  templateHtml = await inlineSignatureImages(templateHtml);
+
+  return renderPdfFromHtml(templateHtml);
 }
 
 app.post('/generate-certificate', async (req, res) => {
@@ -150,16 +177,24 @@ app.post('/generate-and-send', async (req, res) => {
     }
 
     const pdfBuffer = await generateCertificateBuffer({ name, eventDetails, date, certificateId });
+
+    console.log('Sending email...');
     await sendEmail(email, pdfBuffer);
 
-    return res.json({ success: true, message: 'Certificate generated and email sent successfully' });
+    return res.json({ success: true });
   } catch (error) {
     console.error('Error in /generate-and-send:', error);
-    return res.status(500).json({ success: false, message: 'Failed to generate and send certificate', error: error.message });
+    return res.status(500).json({
+      message: 'Failed to generate and send certificate',
+      detail: error.message,
+    });
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`VisionX backend running at http://localhost:${PORT}`);
 });

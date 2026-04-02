@@ -2,245 +2,282 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>VisionX Club - Certificate</title>
-
+  <title>VisionX Club - Certificate of Participation</title>
   <style>
     @page { size: A4 landscape; margin: 0; }
-
     html, body {
       margin: 0;
       padding: 0;
+      background: #f0f4fc;
       width: 297mm;
       height: 210mm;
-      background: #f0f4fc;
-      font-family: 'Segoe UI', Arial, sans-serif;
       overflow: hidden;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-
-    .certificate-container {
-      width: 287mm;
-      height: 200mm;
-      margin: auto;
-      background: radial-gradient(circle at top left, #163f8a, #0a2653);
-      border: 4mm solid #d4af37;
+    .certificate-wrapper {
+      width: 297mm;
+      height: 210mm;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .certificate-container {
       position: relative;
-    }
-
-    .certificate {
-      width: 100%;
-      height: 100%;
-      padding: 12mm;
-      background: linear-gradient(#ffffff, #edf2f8);
-      border: 5mm solid #0a2f74;
-      display: flex;
-      flex-direction: column;
+      width: 287mm;
+      height: 200mm;
+      padding: 0;
+      background: radial-gradient(circle at top left, #163f8a 0%, #0d2e63 45%, #0a2653 100%);
+      border: 4mm solid #d4af37;
       box-sizing: border-box;
+      color: #1b3a65;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.25);
     }
-
-    /* QR */
     .qr-code {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 14px;
+      right: 16px;
+      z-index: 2;
+      line-height: 0;
     }
-
-    .qr-code svg {
-      width: 100px;
-      height: 100px;
+    .qr-code img {
+      width: 112px;
+      height: 112px;
+      display: block;
+      object-fit: contain;
     }
-
-    /* HEADER */
-    .header {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .club-title {
-      font-size: 38px;
-      font-weight: 900;
-      color: #0a2f74;
-    }
-
-    .main-title {
-      font-size: 40px;
-      font-weight: 900;
-      color: #d4af37;
-      margin: 6px 0;
-    }
-
-    .line {
-      width: 120px;
-      height: 5px;
-      background: #d4af37;
-      margin: auto;
-      border-radius: 3px;
-    }
-
-    /* BODY */
-    .body {
-      flex: 1;
+    .certificate {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 10mm 11mm 10mm;
+      background: linear-gradient(145deg, #ffffff 0%, #f7f9fd 55%, #edf2f8 100%);
+      border: 5mm solid #0a2f74;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      text-align: center;
-      padding: 10px 20px;
+      justify-content: space-between;
+      page-break-inside: avoid;
+      overflow: hidden;
+      gap: 0;
     }
-
+    .header {
+      text-align: center;
+      flex-shrink: 0;
+      padding: 2px 120px 0 8px;
+      margin-bottom: 4px;
+    }
+    .club-title {
+      font-size: 39px;
+      color: #0a2f74;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+      margin: 0 0 10px;
+    }
+    .main-title {
+      font-size: 40px;
+      color: #d4af37;
+      font-weight: 900;
+      letter-spacing: 1.6px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.22);
+      margin: 0 auto 12px;
+    }
+    .line {
+      width: 140px;
+      height: 6px;
+      margin: 0 auto 0;
+      background: linear-gradient(90deg, #d4af37, #f4d480);
+      border-radius: 3px;
+    }
+    .body {
+      text-align: center;
+      padding: 8px 24px 0;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
     .lead {
       font-size: 20px;
-      margin-bottom: 10px;
+      margin: 0 0 12px;
       color: #395181;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
-
     .receiver {
       font-size: 48px;
-      font-weight: 900;
+      margin: 0 auto 18px;
       color: #112c61;
-      margin: 15px 0;
-      padding: 10px 20px;
-      background: rgba(212,175,55,0.2);
-      border-radius: 8px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: inline-block;
+      position: relative;
+      background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(255,255,255,0.12));
+      padding: 10px 22px;
+      border-radius: 10px;
+      line-height: 1.15;
+      max-width: 92%;
+      width: max-content;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      flex-shrink: 0;
     }
-
     .event-details {
       font-size: 16px;
-      line-height: 1.6;
       color: #2a3d63;
+      line-height: 1.65;
+      margin: 0 auto;
+      max-width: 680px;
+      white-space: pre-wrap;
+      padding: 0 14px;
+      text-align: center;
+      flex-shrink: 1;
+      min-height: 0;
     }
-
     .date {
-      margin-top: 15px;
-      margin-bottom: 15px;
-      font-weight: 600;
+      font-size: 16px;
       color: #59739b;
+      margin-top: 16px;
+      margin-bottom: 4px;
+      font-weight: 600;
+      flex-shrink: 0;
     }
-
-    /* SIGNATURES */
     .signatures {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      border-top: 1px solid #ccc;
+      flex-shrink: 0;
+      margin-top: 20px;
       padding-top: 20px;
-      gap: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      gap: 12px;
+      page-break-inside: avoid;
     }
-
     .sign-box {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 33.33%;
       text-align: center;
+      overflow: hidden;
+      padding: 4px 6px 0;
+      box-sizing: border-box;
     }
-
     .sign-img {
-      width: 160px;
-      height: 60px;
+      width: 100%;
+      max-width: 180px;
+      max-height: 72px;
+      height: auto;
       object-fit: contain;
-      margin: 10px auto;
+      object-position: center bottom;
+      margin: 0 auto 12px;
       display: block;
     }
-
     .sign-line {
-      width: 150px;
       border-top: 2px solid #0a2f74;
-      margin: 5px auto;
+      margin: 0 auto 14px;
+      width: 90%;
+      max-width: 200px;
     }
-
     .sign-name {
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 700;
       color: #0a2f74;
+      margin: 0;
+      line-height: 1.35;
     }
-
     .sign-title {
-      font-size: 13px;
+      font-size: 12.5px;
+      font-weight: 600;
       color: #3e5381;
+      margin-top: 8px;
+      line-height: 1.4;
     }
-
     .sign-designation {
-      font-size: 12px;
+      font-size: 12.5px;
       color: #4b5f8d;
+      margin-top: 5px;
+      line-height: 1.4;
     }
-
     .footer {
       text-align: center;
-      font-size: 12px;
+      flex-shrink: 0;
       margin-top: 10px;
+      padding-top: 8px;
+      font-size: 12.5px;
       color: #3e5485;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      page-break-inside: avoid;
     }
-
+    .certificate .body::before {
+      content: '';
+      display: block;
+      width: 100px;
+      height: 6px;
+      margin: 0 auto 8px;
+      background: linear-gradient(90deg, #d4af37, #f4d480);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
   </style>
 </head>
-
 <body>
-
   <div class="certificate-container">
-
-    <!-- QR -->
-    <div class="qr-code">
-      {{qrSvg}}
-    </div>
-
     <div class="certificate">
-
-      <!-- HEADER -->
+      <div class="qr-code">
+        <img src="{{qrCode}}" alt="" />
+      </div>
       <div class="header">
         <div class="club-title">VisionX Club</div>
         <div class="main-title">Certificate of Participation</div>
         <div class="line"></div>
       </div>
-
-      <!-- BODY -->
       <div class="body">
         <div class="lead">This certificate is proudly awarded to</div>
         <div class="receiver">{{name}}</div>
-
         <div class="event-details">
-          for actively participating in the peer-to-peer workshop <br>
-          “Synapse AI – AI Coding Secrets Every Student Should Know” <br>
+          for actively participating in the peer-to-peer workshop 
+          “Synapse AI – AI Coding Secrets Every Student Should Know” 
           organized by VisionX Club on 1 April 2026.
         </div>
-
-        <div class="date">Date: 1st April 2026</div>
+        <div class="date">Date: {{date}}</div>
       </div>
-
-      <!-- SIGNATURES -->
       <div class="signatures">
-
         <div class="sign-box">
-          <img class="sign-img" src="{{smithaSign}}">
+          <img class="sign-img" src="{{assetOrigin}}/assets/signature-smitha.png" alt="Ms. Smitha S P signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Ms. Smitha S P</div>
           <div class="sign-title">Assistant Professor, PSCS</div>
           <div class="sign-designation">Club Coordinator</div>
         </div>
-
         <div class="sign-box">
-          <img class="sign-img" src="{{suhaibSign}}">
+          <img class="sign-img" src="{{assetOrigin}}/assets/signature-suhaib.png" alt="Suhaib S Z signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Suhaib S Z</div>
           <div class="sign-title">Event Head, VisionX Club</div>
           <div class="sign-designation">Event Lead</div>
         </div>
-
         <div class="sign-box">
-          <img class="sign-img" src="{{noureenSign}}">
+          <img class="sign-img" src="{{assetOrigin}}/assets/signature-noureen.png" alt="Noureen Aslam signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Noureen Aslam</div>
           <div class="sign-title">President, VisionX Club</div>
           <div class="sign-designation">Club President</div>
         </div>
-
       </div>
-
-      <!-- FOOTER -->
       <div class="footer">
-        Synapse AI – AI Coding Secrets Every Student Should Know · VisionX Club
+        Synapse AI – AI Coding Secrets Every Student Should Know · Peer-to-Peer Workshop
       </div>
-
     </div>
   </div>
-
 </body>
 </html>

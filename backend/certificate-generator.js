@@ -1,8 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
-import os from 'os';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer';
 import QRCode from 'qrcode';
 
@@ -34,25 +33,37 @@ async function waitForImagesReady(page) {
   );
 }
 
-function injectAssetsBaseHref(html) {
-  const baseHref = pathToFileURL(path.join(__dirname, 'public', 'assets') + path.sep).href;
-  if (html.includes('<base ')) return html;
-  return html.replace('<head>', `<head>\n  <base href="${baseHref}" />`);
+async function inlineSignatureImages(html) {
+  const files = ['signature-smitha.png', 'signature-suhaib.png', 'signature-noureen.png'];
+  let out = html;
+  for (const file of files) {
+    const assetPath = path.join(__dirname, 'public', 'assets', file);
+    const buf = await fs.readFile(assetPath);
+    const b64 = buf.toString('base64');
+    out = out.replaceAll(`{{assetOrigin}}/assets/${file}`, `data:image/png;base64,${b64}`);
+  }
+  return out;
 }
 
-async function renderPdfFromCertificateHtml(html) {
-  const htmlWithBase = injectAssetsBaseHref(html);
-  const tmpPath = path.join(
-    os.tmpdir(),
-    `cert-render-${Date.now()}-${crypto.randomBytes(8).toString('hex')}.html`,
-  );
-  await fs.writeFile(tmpPath, htmlWithBase, 'utf8');
-  const fileUrl = pathToFileURL(tmpPath).href;
+async function renderPdfFromHtml(html) {
+  console.log('Launching browser...');
+  const launchOptions = {
+    headless: true,
+    args: [
+      '--no-sandbox',            // ✅ required for Render
+      '--disable-setuid-sandbox',// ✅ required for Render
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  };
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
 
-  const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await puppeteer.launch(launchOptions);
+  const page = await browser.newPage();
   try {
-    const page = await browser.newPage();
-    await page.goto(fileUrl, { waitUntil: 'load' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 120_000 });
     await waitForImagesReady(page);
     await page.evaluate(
       () =>
@@ -61,18 +72,14 @@ async function renderPdfFromCertificateHtml(html) {
         }),
     );
 
-    const pdfBuffer = await page.pdf({
+    console.log('Generating PDF...');
+    return await page.pdf({
       format: 'A4',
       landscape: true,
       printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      pageRanges: '1',
     });
-
-    return pdfBuffer;
   } finally {
     await browser.close();
-    await fs.unlink(tmpPath).catch(() => {});
   }
 }
 
@@ -82,22 +89,21 @@ export async function generateCertificate(name) {
   }
 
   const certificateId = crypto.randomUUID();
+  const verificationUrl = `https://verify.visionxclub.tech/certificate/${certificateId}`;
+
+  console.log('Generating QR...');
+  const qrCode = await QRCode.toDataURL(verificationUrl);
+
   const templatePath = path.join(__dirname, 'certificate-template.html');
   let template = await fs.readFile(templatePath, 'utf8');
 
-  const escapedName = escapeHtml(name);
-  const qrSvg = await QRCode.toString(`https://visionx-club.in/certificate/${certificateId}`, {
-    type: 'svg',
-    margin: 0,
-    width: 112,
-    color: { dark: '#0a2f74', light: '#00000000' },
-  });
-
   template = template
-    .replace(/{{\s*name\s*}}/g, () => escapedName)
+    .replace(/{{\s*name\s*}}/g, () => escapeHtml(name))
     .replace(/{{\s*eventDetails\s*}}/g, () => '')
     .replace(/{{\s*date\s*}}/g, () => '1st April 2026')
-    .replace(/{{\s*qrSvg\s*}}/g, () => qrSvg);
+    .replace(/{{\s*qrCode\s*}}/g, () => qrCode);
 
-  return renderPdfFromCertificateHtml(template);
+  template = await inlineSignatureImages(template);
+
+  return renderPdfFromHtml(template);
 }

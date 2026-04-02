@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import './App.css';
 
-const API_BASE =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL?.replace(/\/$/, '')) ||
-  'https://visionx-e-certificate.onrender.com';
+// Ensure the API URL doesn't have a trailing slash
+const API_BASE = "https://visionx-e-certificate.onrender.com";
 
 function App() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const sendForm = async (e) => {
     e.preventDefault();
-    setStatus('Sending...');
+    setLoading(true);
+    setStatus('Generating and sending your certificate... please wait.');
 
     try {
       const response = await fetch(`${API_BASE}/generate-and-send`, {
@@ -20,48 +21,79 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email }),
       });
+
       const text = await response.text();
       let data = {};
+      
       try {
         data = text ? JSON.parse(text) : {};
-      } catch {
-        setStatus(`Error: ${response.status} — ${text.slice(0, 200) || 'non-JSON response'}`);
+      } catch (err) {
+        // Handle cases where the server returns an HTML error page (like a 500 error)
+        setStatus(`Server Error: ${response.status}. The certificate service might be restarting.`);
+        setLoading(false);
         return;
       }
 
       if (response.ok) {
-        setStatus('Success! Certificate sent to ' + email);
+        setStatus(`✅ Success! Certificate sent to ${email}`);
+        setName(''); // Clear form on success
+        setEmail('');
       } else {
-        const hint = data.detail ? ` (${data.detail})` : '';
-        setStatus(`Error: ${data.message || 'unknown'}${hint}`);
+        const errorMessage = data.message || data.error || 'Internal Server Error';
+        setStatus(`❌ Error: ${errorMessage}`);
       }
     } catch (error) {
-      setStatus('Error: ' + error.message);
+      setStatus('❌ Connection Error: Could not reach the server.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="app-container">
-      <h1>VisionX Club Certificate Generator</h1>
-      <p>Event: Synapse AI – AI Coding Secrets Every Student Should Know</p>
-      <p>Type: Peer-to-Peer Workshop</p>
-      <p>Date: 1st April 2026</p>
+      <div className="glass-card">
+        <h1>VisionX Club Certificate Generator</h1>
+        <div className="event-info">
+          <p><strong>Event:</strong> Synapse AI – AI Coding Secrets</p>
+          <p><strong>Type:</strong> Peer-to-Peer Workshop</p>
+          <p><strong>Date:</strong> 1st April 2026</p>
+        </div>
 
-      <form onSubmit={sendForm} className="form-card">
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
+        <form onSubmit={sendForm} className="form-card">
+          <div className="input-group">
+            <label>Full Name</label>
+            <input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="As it should appear on certificate"
+              required 
+              disabled={loading}
+            />
+          </div>
 
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
+          <div className="input-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="Enter your registered email"
+              required 
+              disabled={loading}
+            />
+          </div>
 
-        <button type="submit">Generate & Send Certificate</button>
-      </form>
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? 'Processing...' : 'Generate & Send Certificate'}
+          </button>
+        </form>
 
-      {status && <div className="status">{status}</div>}
+        {status && (
+          <div className={`status-message ${status.includes('Success') ? 'success' : 'error'}`}>
+            {status}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

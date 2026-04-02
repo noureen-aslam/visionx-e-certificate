@@ -1,0 +1,8 @@
+.app-container { max-width: 520px; margin: 40px auto; background: white; border-radius: 12px; padding: 28px; box-shadow: 0 12px 30px rgba(0,0,0,.08); }
+.app-container h1 { margin: 0 0 10px; font-size: 1.7rem; }
+.form-card { display: grid; gap: 14px; margin-top: 18px; }
+label { display: grid; font-size: 0.95rem; gap: 6px; }
+input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #ccd6e5; }
+button { padding: 10px 16px; border: 0; border-radius: 8px; background: #0b4f9f; color: white; font-weight: bold; cursor: pointer; }
+button:hover { background: #0d3f7d; }
+.status { margin-top: 16px; font-weight: 600; }

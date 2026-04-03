@@ -4,238 +4,145 @@
   <meta charset="utf-8" />
   <title>VisionX Club - Certificate of Participation</title>
   <style>
-    @page { size: A4 landscape; margin: 0; }
     html, body {
       margin: 0;
       padding: 0;
       background: #f0f4fc;
       width: 297mm;
       height: 210mm;
-      overflow: hidden;
       font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .certificate-wrapper {
-      width: 297mm;
-      height: 210mm;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     .certificate-container {
-      position: relative;
       width: 287mm;
       height: 200mm;
-      padding: 0;
       background: radial-gradient(circle at top left, #163f8a 0%, #0d2e63 45%, #0a2653 100%);
       border: 4mm solid #d4af37;
       box-sizing: border-box;
-      color: #1b3a65;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 20px rgba(0,0,0,0.25);
     }
-    .qr-code {
-      position: absolute;
-      top: 14px;
-      right: 16px;
-      z-index: 2;
-      line-height: 0;
-    }
-    .qr-code img {
-      width: 112px;
-      height: 112px;
-      display: block;
-      object-fit: contain;
-    }
     .certificate {
-      position: relative;
       width: 100%;
       height: 100%;
-      padding: 10mm 11mm 10mm;
+      padding: 12mm;
       background: linear-gradient(145deg, #ffffff 0%, #f7f9fd 55%, #edf2f8 100%);
       border: 5mm solid #0a2f74;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      page-break-inside: avoid;
       overflow: hidden;
-      gap: 0;
     }
     .header {
       text-align: center;
-      flex-shrink: 0;
-      padding: 2px 120px 0 8px;
-      margin-bottom: 4px;
     }
     .club-title {
-      font-size: 39px;
+      font-size: 44px;
       color: #0a2f74;
       font-weight: 900;
-      letter-spacing: 1.4px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-      margin: 0 0 10px;
+      margin-bottom: 10px;
     }
     .main-title {
-      font-size: 40px;
+      font-size: 46px;
       color: #d4af37;
       font-weight: 900;
-      letter-spacing: 1.6px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.22);
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
     }
     .line {
-      width: 140px;
+      width: 130px;
       height: 6px;
-      margin: 0 auto 0;
+      margin: 0 auto 20px;
       background: linear-gradient(90deg, #d4af37, #f4d480);
       border-radius: 3px;
     }
     .body {
       text-align: center;
-      padding: 8px 24px 0;
-      flex: 1;
-      min-height: 0;
-      margin-bottom: 20px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 6px 16px 0 16px;
     }
     .lead {
-      font-size: 20px;
-      margin: 0 0 12px;
+      font-size: 22px;
+      margin-top: 12px;
       color: #395181;
       font-weight: 600;
-      letter-spacing: 0.02em;
     }
     .receiver {
-      font-size: 48px;
-      margin: 0 auto 18px;
+      font-size: 60px;
+      margin: 12px auto;
       color: #112c61;
       font-weight: 900;
-      letter-spacing: 0.08em;
       text-transform: uppercase;
-      display: inline-block;
-      position: relative;
-      background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(255,255,255,0.12));
-      padding: 10px 22px;
+      padding: 6px 16px;
       border-radius: 10px;
-      line-height: 1.15;
-      max-width: 92%;
-      width: max-content;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.1));
     }
     .event-details {
-      font-size: 16px;
+      font-size: 20px;
       color: #2a3d63;
-      line-height: 1.65;
-      margin: 0 auto;
-      max-width: 680px;
-      white-space: pre-wrap;
-      padding: 0 14px;
+      line-height: 1.7;
+      margin: 20px auto 0;
+      max-width: 760px;
       text-align: center;
-      flex-shrink: 1;
-      min-height: 0;
     }
     .date {
-      font-size: 16px;
+      font-size: 18px;
       color: #59739b;
-      margin-top: 16px;
-      margin-bottom: 4px;
+      margin-top: 14px;
       font-weight: 600;
-      flex-shrink: 0;
     }
     .signatures {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-shrink: 0;
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(0, 0, 0, 0.1);
-      gap: 12px;
-      page-break-inside: avoid;
+      justify-content: space-evenly;
+      gap: 18px;
+      margin-top: 28px;
     }
     .sign-box {
-      flex: 1 1 0;
-      min-width: 0;
-      max-width: 33.33%;
+      width: calc(33.333% - 12px);
       text-align: center;
-      overflow: hidden;
-      padding: 4px 6px 0;
+      padding: 8px 8px 16px;
       box-sizing: border-box;
     }
     .sign-img {
-      width: 100%;
-      max-width: 180px;
-      max-height: 72px;
-      height: auto;
+      max-width: 100%;
+      max-height: 90px;   /* keeps signatures visible but contained */
       object-fit: contain;
-      object-position: center bottom;
-      margin: 0 auto 12px;
-      display: block;
+      margin-bottom: 8px;
     }
     .sign-line {
       border-top: 2px solid #0a2f74;
-      margin: 0 auto 14px;
-      width: 90%;
-      max-width: 200px;
+      margin: 0 auto 10px;
+      width: 70%;
     }
     .sign-name {
-      font-size: 14px;
       font-weight: 700;
       color: #0a2f74;
-      margin: 0;
-      line-height: 1.35;
+      margin-top: 6px;
     }
     .sign-title {
-      font-size: 12.5px;
+      font-size: 14px;
       font-weight: 600;
       color: #3e5381;
-      margin-top: 8px;
-      line-height: 1.4;
+      margin-top: 4px;
     }
     .sign-designation {
-      font-size: 12.5px;
+      font-size: 14px;
       color: #4b5f8d;
-      margin-top: 5px;
-      line-height: 1.4;
+      margin-top: 4px;
+      line-height: 1.3;
     }
     .footer {
       text-align: center;
-      flex-shrink: 0;
-      margin-top: 10px;
-      padding-top: 8px;
-      font-size: 12.5px;
+      margin-top: 20px;
+      font-size: 14px;
       color: #3e5485;
       font-weight: 600;
-      letter-spacing: 0.02em;
-      page-break-inside: avoid;
-    }
-    .certificate .body::before {
-      content: '';
-      display: block;
-      width: 100px;
-      height: 6px;
-      margin: 0 auto 8px;
-      background: linear-gradient(90deg, #d4af37, #f4d480);
-      border-radius: 3px;
-      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
   <div class="certificate-container">
     <div class="certificate">
-      <div class="qr-code">
-        <img src="{{qrCode}}" alt="" />
-      </div>
       <div class="header">
         <div class="club-title">VisionX Club</div>
         <div class="main-title">Certificate of Participation</div>
@@ -249,25 +156,25 @@
           “Synapse AI – AI Coding Secrets Every Student Should Know” 
           organized by VisionX Club on 1 April 2026.
         </div>
-        <div class="date">Date: {{date}}</div>
+        <div class="date">Date: 1st April 2026</div>
       </div>
       <div class="signatures">
         <div class="sign-box">
-          <img class="sign-img" src="{{assetOrigin}}/assets/signature-smitha.png" alt="Ms. Smitha S P signature" />
+          <img class="sign-img" src="http://localhost:5000/assets/signature-smitha.png-removebg-preview.png" alt="Ms. Smitha S P signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Ms. Smitha S P</div>
           <div class="sign-title">Assistant Professor, PSCS</div>
           <div class="sign-designation">Club Coordinator</div>
         </div>
         <div class="sign-box">
-          <img class="sign-img" src="{{assetOrigin}}/assets/signature-suhaib.png" alt="Suhaib S Z signature" />
+          <img class="sign-img" src="http://localhost:5000/assets/signature-suhaib.png-removebg-preview.png" alt="Suhaib S Z signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Suhaib S Z</div>
-          <div class="sign-title">Event Head, VisionX Club</div>
+          <div class="sign-title">Event Head, VisionX</div>
           <div class="sign-designation">Event Lead</div>
         </div>
         <div class="sign-box">
-          <img class="sign-img" src="{{assetOrigin}}/assets/signature-noureen.png" alt="Noureen Aslam signature" />
+          <img class="sign-img" src="http://localhost:5000/assets/signature-noureen.png.png" alt="Noureen Aslam signature" />
           <div class="sign-line"></div>
           <div class="sign-name">Noureen Aslam</div>
           <div class="sign-title">President, VisionX Club</div>

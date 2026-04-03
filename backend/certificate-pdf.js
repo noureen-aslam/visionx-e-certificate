@@ -73,15 +73,18 @@ export async function buildCertificatePdfBuffer({ name, certificateId }) {
   });
 
   const qrImage = await pdfDoc.embedPng(qrPngBuffer);
-  const qrSize = Number(process.env.CERT_QR_SIZE_PT) || 72;
-  const qrMargin = Number(process.env.CERT_QR_MARGIN_PT) || 18;
+  // Change this part in your buildCertificatePdfBuffer function
+const qrSize = 85; // Slightly larger for better scanning
+const qrMargin = 25;
 
-  page.drawImage(qrImage, {
-    x: width - qrSize - qrMargin,
-    y: qrMargin,
-    width: qrSize,
-    height: qrSize,
-  });
+page.drawImage(qrImage, {
+  // width - size - margin moves it to the right
+  x: width - qrSize - qrMargin, 
+  // height - size - margin moves it to the top
+  y: height - qrSize - qrMargin, 
+  width: qrSize,
+  height: qrSize,
+});
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);

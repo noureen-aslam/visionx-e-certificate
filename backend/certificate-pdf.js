@@ -1,91 +1,76 @@
-import crypto from 'crypto';
-import fsPromises from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
 import QRCode from 'qrcode';
+import nodemailer from 'nodemailer';
+import fs from 'fs/promises';
+import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// 1. GENERATE PDF (Using PNG background to ensure design shows)
+export async function buildCertificate({ name, email }) {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
 
-const TEMPLATE_PDF_PATH = path.join(__dirname, 'certificate-template.pdf');
+    // Load your design (Must be in an 'assets' folder as a PNG)
+    const templatePath = path.join(process.cwd(), 'assets', 'certificate-template.png');
+    const templateBytes = await fs.readFile(templatePath);
+    const backgroundLayout = await pdfDoc.embedPng(templateBytes);
 
-/**
- * @param {{ name: string, certificateId?: string }} opts
- * @returns {Promise<Buffer>}
- */
-export async function buildCertificatePdfBuffer({ name, certificateId }) {
-  const trimmed = String(name).trim();
-  if (!trimmed) {
-    throw new Error('name is required');
-  }
+    page.drawImage(backgroundLayout, {
+        x: 0, y: 0,
+        width: page.getWidth(),
+        height: page.getHeight(),
+    });
 
-  let templateBytes;
-  try {
-    templateBytes = await fsPromises.readFile(TEMPLATE_PDF_PATH);
-  } catch {
-    throw new Error(
-      'certificate-template.pdf is missing. Place your static certificate PDF in the backend directory as certificate-template.pdf',
-    );
-  }
+    // Add Name (Centered)
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const displayName = name.toUpperCase();
+    const fontSize = 40;
+    const textWidth = font.widthOfTextAtSize(displayName, fontSize);
+    
+    page.drawText(displayName, {
+        x: (page.getWidth() - textWidth) / 2,
+        y: page.getHeight() * 0.50, // Center-ish height
+        size: fontSize,
+        font,
+        color: rgb(0.06, 0.18, 0.38),
+    });
 
-  const id = certificateId || crypto.randomUUID();
-  const verificationUrl = `https://verify.visionxclub.tech/certificate/${id}`;
+    // Add Dynamic QR Code
+    const certId = Math.random().toString(36).substring(7).toUpperCase();
+    const qrBuffer = await QRCode.toBuffer(`https://verify.visionxclub.tech/${certId}`, {
+        margin: 1,
+        color: { dark: '#0a2f74', light: '#ffffff' }
+    });
+    const qrImage = await pdfDoc.embedPng(qrBuffer);
 
-  const pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
-  pdfDoc.registerFontkit(fontkit);
+    page.drawImage(qrImage, {
+        x: page.getWidth() - 110,
+        y: 45,
+        width: 75,
+        height: 75,
+    });
 
-  const pages = pdfDoc.getPages();
-  if (!pages.length) {
-    throw new Error('certificate-template.pdf has no pages');
-  }
+    const pdfBytes = await pdfDoc.save();
+    return Buffer.from(pdfBytes);
+}
 
-  const page = pages[0];
-  const { width, height } = page.getSize();
+// 2. SEND EMAIL
+export async function sendEmail(email, name, pdfBuffer) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS 
+        }
+    });
 
-  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const displayName = trimmed.toUpperCase();
-  const fontSize = Number(process.env.CERT_NAME_FONT_SIZE) || 26;
-  const textWidth = font.widthOfTextAtSize(displayName, fontSize);
-  const x = (width - textWidth) / 2;
-  const nameYRatio = Number(process.env.CERT_NAME_Y_RATIO);
-  const nameY =
-    Number.isFinite(nameYRatio) && nameYRatio > 0 && nameYRatio < 1
-      ? height * nameYRatio
-      : height * 0.48;
-
-  page.drawText(displayName, {
-    x,
-    y: nameY,
-    size: fontSize,
-    font,
-    color: rgb(0.067, 0.176, 0.38),
-  });
-
-  console.log('Generating QR PNG for PDF...');
-  const qrPngBuffer = await QRCode.toBuffer(verificationUrl, {
-    type: 'png',
-    margin: 1,
-    width: 256,
-    errorCorrectionLevel: 'M',
-    color: { dark: '#0a2f74', light: '#ffffffff' },
-  });
-
-  const qrImage = await pdfDoc.embedPng(qrPngBuffer);
-  // Change this part in your buildCertificatePdfBuffer function
-const qrSize = 85; // Slightly larger for better scanning
-const qrMargin = 25;
-
-page.drawImage(qrImage, {
-  // width - size - margin moves it to the right
-  x: width - qrSize - qrMargin, 
-  // height - size - margin moves it to the top
-  y: height - qrSize - qrMargin, 
-  width: qrSize,
-  height: qrSize,
-});
-
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
+    await transporter.sendMail({
+        from: `"VisionX Club" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `Your Participation Certificate - ${name}`,
+        html: `<h3>Congratulations ${name}!</h3><p>Attached is your certificate for the Synapse AI workshop.</p>`,
+        attachments: [{
+            filename: `${name}_VisionX_Certificate.pdf`,
+            content: pdfBuffer
+        }]
+    });
 }

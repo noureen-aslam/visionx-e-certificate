@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import './App.css';
 
-// Ensure the API URL doesn't have a trailing slash
-const API_BASE = "https://visionx-e-certificate.onrender.com";
+const API_BASE =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL?.replace(/\/$/, '')) ||
+  'https://visionx-e-certificate.onrender.com';
 
 function App() {
   const [name, setName] = useState('');
@@ -13,7 +14,7 @@ function App() {
   const sendForm = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setStatus('Generating and sending your certificate... please wait.');
+    setStatus('Processing...');
 
     try {
       const response = await fetch(`${API_BASE}/generate-and-send`, {
@@ -28,22 +29,21 @@ function App() {
       try {
         data = text ? JSON.parse(text) : {};
       } catch (err) {
-        // Handle cases where the server returns an HTML error page (like a 500 error)
         setStatus(`Server Error: ${response.status}. The certificate service might be restarting.`);
-        setLoading(false);
         return;
       }
 
       if (response.ok) {
-        setStatus(`✅ Success! Certificate sent to ${email}`);
-        setName(''); // Clear form on success
+        setStatus(`Success! Certificate sent to ${email}`);
+        setName('');
         setEmail('');
       } else {
         const errorMessage = data.message || data.error || 'Internal Server Error';
-        setStatus(`❌ Error: ${errorMessage}`);
+        const detail = data.detail ? ` — ${data.detail}` : '';
+        setStatus(`Error: ${errorMessage}${detail}`);
       }
     } catch (error) {
-      setStatus('❌ Connection Error: Could not reach the server.');
+      setStatus('Connection Error: Could not reach the server.');
     } finally {
       setLoading(false);
     }

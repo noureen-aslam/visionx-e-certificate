@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 const API_BASE =
@@ -10,6 +10,22 @@ function App() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // --- Verification State ---
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifiedData, setVerifiedData] = useState({ name: '', id: '' });
+
+  useEffect(() => {
+    // Check if the URL contains verification parameters
+    const params = new URLSearchParams(window.location.search);
+    const verifyId = params.get('verify');
+    const studentName = params.get('name');
+
+    if (verifyId && studentName) {
+      setIsVerifying(true);
+      setVerifiedData({ name: studentName, id: verifyId });
+    }
+  }, []);
 
   const sendForm = async (e) => {
     e.preventDefault();
@@ -29,7 +45,7 @@ function App() {
       try {
         data = text ? JSON.parse(text) : {};
       } catch (err) {
-        setStatus(`Server Error: ${response.status}. The certificate service might be restarting.`);
+        setStatus(`Server Error: ${response.status}. Service may be restarting.`);
         return;
       }
 
@@ -49,6 +65,46 @@ function App() {
     }
   };
 
+  // --- VIEW 1: VERIFICATION BADGE (Shown when QR is scanned) ---
+  if (isVerifying) {
+    return (
+      <div className="app-container">
+        <div className="glass-card verification-card">
+          <div className="verify-icon">✅</div>
+          <h1 style={{ color: '#2ecc71' }}>Certificate Verified</h1>
+          <p className="verify-subtitle">Official VisionX Club Academic Record</p>
+          
+          <div className="verify-details">
+            <div className="verify-item">
+              <label>Issued To</label>
+              <p>{verifiedData.name}</p>
+            </div>
+            <div className="verify-item">
+              <label>Event</label>
+              <p>Synapse AI – AI Coding Secrets</p>
+            </div>
+            <div className="verify-item">
+              <label>Certificate ID</label>
+              <p className="mono">{verifiedData.id}</p>
+            </div>
+            <div className="verify-item">
+              <label>Status</label>
+              <p className="status-badge">AUTHENTIC</p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => window.location.href = window.location.origin} 
+            className="back-btn"
+          >
+            ← Back to Generator
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VIEW 2: ORIGINAL GENERATOR FORM ---
   return (
     <div className="app-container">
       <div className="glass-card">

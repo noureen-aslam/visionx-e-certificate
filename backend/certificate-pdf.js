@@ -1,76 +1,113 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
 import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-// 1. GENERATE PDF (Using PNG background to ensure design shows)
-export async function buildCertificate({ name, email }) {
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
+dotenv.config();
 
-    // Load your design (Must be in an 'assets' folder as a PNG)
-    const templatePath = path.join(process.cwd(), 'assets', 'certificate-template.png');
-    const templateBytes = await fs.readFile(templatePath);
-    const backgroundLayout = await pdfDoc.embedPng(templateBytes);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    page.drawImage(backgroundLayout, {
-        x: 0, y: 0,
-        width: page.getWidth(),
-        height: page.getHeight(),
-    });
+// --- OAuth2 Configuration ---
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.GMAIL_CLIENT_ID,
+  process.env.GMAIL_CLIENT_SECRET,
+  process.env.GMAIL_REDIRECT_URI || 'https://developers.google.com/oauthplayground'
+);
+oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
 
-    // Add Name (Centered)
-    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const displayName = name.toUpperCase();
-    const fontSize = 40;
-    const textWidth = font.widthOfTextAtSize(displayName, fontSize);
-    
-    page.drawText(displayName, {
-        x: (page.getWidth() - textWidth) / 2,
-        y: page.getHeight() * 0.50, // Center-ish height
-        size: fontSize,
-        font,
-        color: rgb(0.06, 0.18, 0.38),
-    });
+/**
+ * Builds the PDF Buffer using a PNG background
+ */
+export async function buildCertificate({ name, certificateId }) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
 
-    // Add Dynamic QR Code
-    const certId = Math.random().toString(36).substring(7).toUpperCase();
-    const qrBuffer = await QRCode.toBuffer(`https://verify.visionxclub.tech/${certId}`, {
-        margin: 1,
-        color: { dark: '#0a2f74', light: '#ffffff' }
-    });
-    const qrImage = await pdfDoc.embedPng(qrBuffer);
+  // BULLETPROOF PATH: Points to /backend/public/assets/certificate-template.png
+  const templatePath = path.join(__dirname, 'public', 'assets', 'certificate-template.png');
+  
+  console.log("Attempting to load template from:", templatePath);
 
-    page.drawImage(qrImage, {
-        x: page.getWidth() - 110,
-        y: 45,
-        width: 75,
-        height: 75,
-    });
+  let templateBytes;
+  try {
+    templateBytes = await fs.readFile(templatePath);
+  } catch (err) {
+    console.error("CRITICAL ERROR: Template PNG not found at path!");
+    throw new Error("Missing certificate-template.png in public/assets/");
+  }
 
-    const pdfBytes = await pdfDoc.save();
-    return Buffer.from(pdfBytes);
+  const backgroundLayout = await pdfDoc.embedPng(templateBytes);
+  page.drawImage(backgroundLayout, {
+    x: 0, y: 0,
+    width: page.getWidth(),
+    height: page.getHeight(),
+  });
+
+  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const displayName = name.toUpperCase();
+  const fontSize = 40;
+  const textWidth = font.widthOfTextAtSize(displayName, fontSize);
+  
+  page.drawText(displayName, {
+    x: (page.getWidth() - textWidth) / 2,
+    y: page.getHeight() * 0.48, 
+    size: fontSize,
+    font,
+    color: rgb(0.06, 0.18, 0.38),
+  });
+
+  const id = certificateId || Math.random().toString(36).substring(7).toUpperCase();
+  const qrBuffer = await QRCode.toBuffer(`https://verify.visionxclub.tech/certificate/${id}`, {
+    margin: 1,
+    color: { dark: '#0a2f74', light: '#ffffff' }
+  });
+  const qrImage = await pdfDoc.embedPng(qrBuffer);
+
+  page.drawImage(qrImage, {
+    x: page.getWidth() - 115,
+    y: 45,
+    width: 80,
+    height: 80,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
 
-// 2. SEND EMAIL
+/**
+ * Sends Email via OAuth2
+ */
 export async function sendEmail(email, name, pdfBuffer) {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS 
-        }
-    });
+  const accessToken = await oAuth2Client.getAccessToken();
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      type: 'OAuth2',
+      user: process.env.GMAIL_EMAIL,
+      clientId: process.env.GMAIL_CLIENT_ID,
+      clientSecret: process.env.GMAIL_CLIENT_SECRET,
+      refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+      accessToken: accessToken?.token,
+    },
+  });
 
-    await transporter.sendMail({
-        from: `"VisionX Club" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: `Your Participation Certificate - ${name}`,
-        html: `<h3>Congratulations ${name}!</h3><p>Attached is your certificate for the Synapse AI workshop.</p>`,
-        attachments: [{
-            filename: `${name}_VisionX_Certificate.pdf`,
-            content: pdfBuffer
-        }]
-    });
+  const mailOptions = {
+    from: `VisionX Club <${process.env.GMAIL_EMAIL}>`,
+    to: email,
+    subject: `VisionX Club Certificate – ${name}`,
+    text: `Hello ${name},\n\nYour certificate for the Synapse AI workshop is attached.\n\nWarm regards,\nVisionX Club`,
+    attachments: [
+      {
+        filename: `${name.replace(/\s+/g, '_')}_Certificate.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ],
+  };
+
+  return await transporter.sendMail(mailOptions);
 }

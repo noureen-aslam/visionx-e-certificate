@@ -24,16 +24,14 @@ app.post('/generate-and-send', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and email are required' });
     }
 
-    // Generate PDF
     const pdfBuffer = await buildCertificate({ name, certificateId });
-
-    // Send Email
-    console.log(`Sending certificate to ${email}...`);
+    
+    console.log(`Sending email to ${email}...`);
     await sendEmail(email, name, pdfBuffer);
 
     return res.json({ success: true, message: "Certificate sent successfully!" });
   } catch (error) {
-    console.error('Email Route Error:', error.message);
+    console.error('Error:', error.message);
     return res.status(500).json({ success: false, detail: error.message });
   }
 });

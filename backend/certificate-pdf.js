@@ -21,26 +21,42 @@ const oAuth2Client = new google.auth.OAuth2(
 oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
 
 /**
- * Builds the PDF Buffer using a PNG background
+ * Builds the PDF Buffer. 
+ * Automatically detects if the template is PNG or JPG.
  */
 export async function buildCertificate({ name, certificateId }) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
 
-  // BULLETPROOF PATH: Points to /backend/public/assets/certificate-template.png
   const templatePath = path.join(__dirname, 'public', 'assets', 'certificate-template.png');
-  
-  console.log("Attempting to load template from:", templatePath);
+  console.log("Loading template from:", templatePath);
 
   let templateBytes;
   try {
     templateBytes = await fs.readFile(templatePath);
+    
+    // If the file is less than 500 bytes, it's likely a Git LFS pointer, not an image.
+    if (templateBytes.length < 500) {
+      throw new Error("The image file is corrupted or a Git LFS pointer. Re-upload the actual PNG/JPG.");
+    }
   } catch (err) {
-    console.error("CRITICAL ERROR: Template PNG not found at path!");
-    throw new Error("Missing certificate-template.png in public/assets/");
+    console.error("File Load Error:", err.message);
+    throw new Error(`Could not load background: ${err.message}`);
   }
 
-  const backgroundLayout = await pdfDoc.embedPng(templateBytes);
+  // SMART EMBEDDING: Try PNG first, then JPG
+  let backgroundLayout;
+  try {
+    backgroundLayout = await pdfDoc.embedPng(templateBytes);
+  } catch (pngError) {
+    console.log("Not a valid PNG, attempting to load as JPG...");
+    try {
+      backgroundLayout = await pdfDoc.embedJpg(templateBytes);
+    } catch (jpgError) {
+      throw new Error("The file is neither a valid PNG nor a valid JPG. Please re-save your design correctly.");
+    }
+  }
+
   page.drawImage(backgroundLayout, {
     x: 0, y: 0,
     width: page.getWidth(),
@@ -99,7 +115,7 @@ export async function sendEmail(email, name, pdfBuffer) {
     from: `VisionX Club <${process.env.GMAIL_EMAIL}>`,
     to: email,
     subject: `VisionX Club Certificate – ${name}`,
-    text: `Hello ${name},\n\nYour certificate for the Synapse AI workshop is attached.\n\nWarm regards,\nVisionX Club`,
+    text: `Hello ${name},\n\nThank you for attending the Synapse AI workshop. Your certificate is attached.\n\nWarm regards,\nVisionX Club`,
     attachments: [
       {
         filename: `${name.replace(/\s+/g, '_')}_Certificate.pdf`,

@@ -3,7 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-// FIXED: Importing the correct function name 'buildCertificate'
+
+// FIXED: Importing the correct function names from certificate-pdf.js
 import { buildCertificate, sendEmail } from './certificate-pdf.js';
 
 dotenv.config();
@@ -15,30 +16,26 @@ const PORT = Number(process.env.PORT) || 5000;
 const app = express();
 
 app.use(cors({
-  origin: '*',
+  origin: '*', 
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
+// Serves static assets if needed
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
-
-// Helper to keep logic clean
-async function generateBuffer({ name, certificateId }) {
-  console.log('Building PDF buffer...');
-  return await buildCertificate({ name, certificateId });
-}
 
 app.post('/generate-certificate', async (req, res) => {
   try {
     const { name, certificateId } = req.body;
-    if (!name) return res.status(400).json({ success: false, message: 'name is required' });
+    if (!name) return res.status(400).json({ success: false, message: 'Name is required' });
 
-    const pdfBuffer = await generateBuffer({ name, certificateId });
+    // Call the correct function
+    const pdfBuffer = await buildCertificate({ name, certificateId });
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename=Certificate.pdf`,
+      'Content-Disposition': `attachment; filename=VisionX_Certificate.pdf`,
       'Content-Length': pdfBuffer.length,
     });
 
@@ -53,22 +50,23 @@ app.post('/generate-and-send', async (req, res) => {
   try {
     const { name, email, certificateId } = req.body;
     if (!name || !email) {
-      return res.status(400).json({ success: false, message: 'name and email are required' });
+      return res.status(400).json({ success: false, message: 'Name and email are required' });
     }
 
-    const pdfBuffer = await generateBuffer({ name, certificateId });
+    // Call the correct function
+    const pdfBuffer = await buildCertificate({ name, certificateId });
 
     console.log(`Sending email to ${email}...`);
     await sendEmail(email, name, pdfBuffer);
 
-    return res.json({ success: true, message: "Email sent!" });
+    return res.json({ success: true, message: "Certificate sent successfully!" });
   } catch (error) {
     console.error('Email Route Error:', error);
     return res.status(500).json({ success: false, detail: error.message });
   }
 });
 
-app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/health', (req, res) => res.json({ status: 'active', club: 'VisionX' }));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`VisionX Backend active on port ${PORT}`);

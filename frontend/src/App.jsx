@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import './App.css';
 
-// Using your live Render backend
+// ✅ Always use absolute API base
 const API_BASE = 'https://visionx-e-certificate.onrender.com';
 
 // --- COMPONENT 1: The Verification Page (For QR Scans) ---
@@ -131,18 +131,20 @@ const CertificatePortal = () => {
 // --- MAIN APP COMPONENT WITH ROUTES ---
 function App() {
   return (
-    // Add the basename prop here
-    <Router basename="/synapse-ai">
+    <Router>
       <div className="app-container">
         <Routes>
-          {/* Main Path: Now becomes just "/" relative to the basename */}
+          {/* Main Portal: visionx-club.in */}
           <Route path="/" element={<CertificatePortal />} />
           
-          {/* Unique ID Path: Now becomes "/:id" relative to the basename */}
-          <Route path="/:id" element={<VerifyCertificate />} />
+          {/* QR Verification: visionx-club.in/synapse-ai/VX-SKLVLD6 */}
+          <Route path="/synapse-ai/:id" element={<VerifyCertificate />} />
           
-          {/* Fallback */}
-          <Route path="*" element={<CertificatePortal />} />
+          {/* Fallback for /synapse-ai without an ID */}
+          <Route path="/synapse-ai" element={<CertificatePortal />} />
+
+          {/* General Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </Router>

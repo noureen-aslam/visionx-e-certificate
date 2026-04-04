@@ -1,0 +1,7 @@
+{
+    "rewrites": [
+      { "source": "/synapse-ai/(.*)", "destination": "/index.html" },
+      { "source": "/((?!assets).*)", "destination": "/index.html" }
+    ]
+  }
+  

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import './App.css';
 
-// ✅ Always use absolute API base
 const API_BASE = 'https://visionx-e-certificate.onrender.com';
 
 // --- COMPONENT 1: The Verification Page (For QR Scans) ---
@@ -12,19 +11,26 @@ const VerifyCertificate = () => {
   const name = searchParams.get('name');
 
   return (
-    <div className="glass-card verification-view">
-      <div className="status success-badge">✅ Officially Verified</div>
-      <h1 className="title">VisionX Certificate</h1>
-      
-      <div className="info-grid">
-        <p><strong>Student:</strong> {name || "Attendee"}</p>
-        <p><strong>ID:</strong> {id}</p>
-        <p><strong>Event:</strong> Synapse AI Workshop</p>
-        <p><strong>Status:</strong> Authentic & Issued</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6">
+      <div className="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-blue-900 max-w-md w-full text-center">
+        <div className="mb-6">
+          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+            ✅ Officially Verified
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold text-blue-900 mb-4">VisionX Certificate</h1>
+
+        <div className="space-y-4 text-left border-t border-b py-6 my-4">
+          <p className="text-gray-600"><strong>Student Name:</strong> {name || "Attendee"}</p>
+          <p className="text-gray-600"><strong>Certificate ID:</strong> {id}</p>
+          <p className="text-gray-600"><strong>Event:</strong> Synapse AI – AI Coding Secrets</p>
+          <p className="text-gray-600"><strong>Status:</strong> ✅ Issued & Authentic</p>
+        </div>
+
+        <p className="text-sm text-gray-400 italic">
+          This digital record confirms the participant's attendance and completion of the workshop hosted by VisionX Club at Presidency University.
+        </p>
       </div>
-      
-      <p className="footer-text">Issued by VisionX Club, Presidency University</p>
-      <a href="/synapse-ai" className="text-btn">Go to Portal Home</a>
     </div>
   );
 };
@@ -73,7 +79,9 @@ const CertificatePortal = () => {
       });
       if (res.ok) {
         setStatus(`Success! Sent to ${email}`);
-        setStep(1); setRollNumber(''); setEmail('');
+        setStep(1);
+        setRollNumber('');
+        setEmail('');
       } else {
         setStatus("Failed to send certificate.");
       }
@@ -93,10 +101,11 @@ const CertificatePortal = () => {
         <form onSubmit={handleVerify} className="form-content">
           <div className="input-box">
             <label>Academic Roll Number</label>
-            <input 
-              value={rollNumber} 
-              onChange={(e) => setRollNumber(e.target.value)} 
-              placeholder="Ex: 20221CSE0XXX" required 
+            <input
+              value={rollNumber}
+              onChange={(e) => setRollNumber(e.target.value)}
+              placeholder="Ex: 20221CSE0XXX"
+              required
             />
           </div>
           <button className="primary-btn" disabled={loading}>
@@ -110,20 +119,28 @@ const CertificatePortal = () => {
           </div>
           <div className="input-box">
             <label>Delivery Email</label>
-            <input 
-              type="email" value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder="Enter your email address" required 
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              required
             />
           </div>
           <button className="primary-btn send" disabled={loading}>
             {loading ? 'Sending PDF...' : 'Claim Certificate'}
           </button>
-          <button type="button" onClick={() => setStep(1)} className="text-btn">Not you? Go back</button>
+          <button type="button" onClick={() => setStep(1)} className="text-btn">
+            Not you? Go back
+          </button>
         </form>
       )}
 
-      {status && <div className={`status ${status.includes('Success') ? 'success' : 'error'}`}>{status}</div>}
+      {status && (
+        <div className={`status ${status.includes('Success') ? 'success' : 'error'}`}>
+          {status}
+        </div>
+      )}
     </div>
   );
 };
@@ -134,16 +151,9 @@ function App() {
     <Router>
       <div className="app-container">
         <Routes>
-          {/* Main Portal: visionx-club.in */}
           <Route path="/" element={<CertificatePortal />} />
-          
-          {/* QR Verification: visionx-club.in/synapse-ai/VX-SKLVLD6 */}
           <Route path="/synapse-ai/:id" element={<VerifyCertificate />} />
-          
-          {/* Fallback for /synapse-ai without an ID */}
           <Route path="/synapse-ai" element={<CertificatePortal />} />
-
-          {/* General Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

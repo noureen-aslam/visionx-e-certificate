@@ -131,16 +131,17 @@ const CertificatePortal = () => {
 // --- MAIN APP COMPONENT WITH ROUTES ---
 function App() {
   return (
-    <Router>
+    // Add the basename prop here
+    <Router basename="/synapse-ai">
       <div className="app-container">
         <Routes>
-          {/* Main Path: Shows the form */}
-          <Route path="/synapse-ai" element={<CertificatePortal />} />
+          {/* Main Path: Now becomes just "/" relative to the basename */}
+          <Route path="/" element={<CertificatePortal />} />
           
-          {/* Unique ID Path: Shows the verification result (QR target) */}
-          <Route path="/synapse-ai/:id" element={<VerifyCertificate />} />
+          {/* Unique ID Path: Now becomes "/:id" relative to the basename */}
+          <Route path="/:id" element={<VerifyCertificate />} />
           
-          {/* Fallback to main path */}
+          {/* Fallback */}
           <Route path="*" element={<CertificatePortal />} />
         </Routes>
       </div>

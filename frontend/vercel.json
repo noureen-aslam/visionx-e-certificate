@@ -1,16 +1,6 @@
 {
     "rewrites": [
-      {
-        "source": "/synapse-ai/:id",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/synapse-ai",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/(.*)",
-        "destination": "/index.html"
-      }
+      { "source": "/synapse-ai/(.*)", "destination": "/index.html" },
+      { "source": "/synapse-ai", "destination": "/index.html" }
     ]
   }

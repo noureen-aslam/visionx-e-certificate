@@ -16,6 +16,7 @@ export async function buildCertificate({ name, certificateId }) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
 
+  // Ensure path is correct for your Render environment
   const templatePath = path.join(__dirname, 'public', 'assets', 'certificate-template.png');
   const templateBytes = await fs.readFile(templatePath);
   const backgroundLayout = await pdfDoc.embedPng(templateBytes);
@@ -35,24 +36,29 @@ export async function buildCertificate({ name, certificateId }) {
     color: rgb(0.06, 0.18, 0.38),
   });
 
-  const vUrl = `https://visionx-club-eight.vercel.app?verify=${certificateId}&name=${encodeURIComponent(name)}`;
-  const qrBuffer = await QRCode.toBuffer(vUrl, { margin: 1, color: { dark: '#0a2f74' } });
+  // UPDATED URL: /synapse-ai/ID?name=NAME
+  const vUrl = `https://visionx-club.in/synapse-ai/${certificateId}?name=${encodeURIComponent(name)}`;
+  
+  const qrBuffer = await QRCode.toBuffer(vUrl, { 
+    margin: 1, 
+    color: { dark: '#0a2f74', light: '#ffffff' } 
+  });
   const qrImage = await pdfDoc.embedPng(qrBuffer);
 
   page.drawImage(qrImage, { x: 730, y: 485, width: 75, height: 75 });
+  
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
 }
 
 export async function sendEmail(email, name, pdfBuffer) {
-  // Replace 'visionxclub.com' with your verified Resend domain
-  const domain = process.env.RESEND_DOMAIN || 'visionxclub.com'; 
+  const domain = process.env.RESEND_DOMAIN || 'visionx-club.in'; 
   
   await resend.emails.send({
     from: `VisionX Club <certificates@${domain}>`,
     to: email,
     subject: `Certificate of Achievement: ${name}`,
-    text: `Hello ${name},\n\nCongratulations on completing the Synapse AI workshop! Your certificate is attached.`,
+    html: `<p>Hello <strong>${name}</strong>,</p><p>Congratulations on completing the <strong>Synapse AI</strong> workshop! Your verified certificate is attached below.</p><p>Best Regards,<br>VisionX Club Team</p>`,
     attachments: [
       {
         filename: `${name.replace(/\s+/g, '_')}_Certificate.pdf`,

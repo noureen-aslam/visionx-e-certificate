@@ -81,6 +81,7 @@ const CertificatePortal = () => {
         body: JSON.stringify({ name, email, rollNumber })
       });
       
+      
       if (res.ok) {
         setStatus(`Success! Sent to ${email}`);
         setStep(1);

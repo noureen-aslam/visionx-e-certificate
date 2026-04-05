@@ -74,9 +74,13 @@ const CertificatePortal = () => {
     try {
       const res = await fetch(`${API_BASE}/generate-and-send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_VISIONX_API_KEY
+        },
         body: JSON.stringify({ name, email, rollNumber })
       });
+      
       if (res.ok) {
         setStatus(`Success! Sent to ${email}`);
         setStep(1);

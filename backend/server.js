@@ -33,15 +33,16 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
-// --- NEW: Verify Student Route ---
+// --- Verify Student Route ---
 app.post('/verify-student', async (req, res) => {
   try {
     const { rollNumber } = req.body;
-    if (!rollNumber) return res.status(400).json({ success: false, message: "Roll number required" });
+    if (!rollNumber) {
+      return res.status(400).json({ success: false, message: "Roll number required" });
+    }
 
-    // Look for student in your 'verified_attendees' collection
-    const student = await db.collection('verified_attendees').findOne({ 
-      rollNumber: rollNumber.toUpperCase().trim() 
+    const student = await db.collection('verified_attendees').findOne({
+      rollNumber: rollNumber.toUpperCase().trim()
     });
 
     if (student) {
@@ -54,8 +55,14 @@ app.post('/verify-student', async (req, res) => {
   }
 });
 
-// --- Generate and Send Route ---
+// --- Generate and Send Route (SECURED) ---
 app.post('/generate-and-send', async (req, res) => {
+  // 🔐 SECURITY CHECK
+  const apiKey = req.headers['x-api-key'];
+  if (!apiKey || apiKey !== process.env.VISIONX_API_KEY) {
+    return res.status(403).json({ success: false, message: "Forbidden: Invalid API key" });
+  }
+
   try {
     const { name, email, rollNumber } = req.body;
     const certificateId = `VX-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
@@ -66,7 +73,10 @@ app.post('/generate-and-send', async (req, res) => {
     // 2. Save Log to Database
     if (db) {
       await db.collection('issued_certificates').insertOne({
-        name, email, rollNumber, certificateId,
+        name,
+        email,
+        rollNumber,
+        certificateId,
         event: "Synapse AI – AI Coding Secrets",
         issuedAt: new Date(),
       });
@@ -82,4 +92,6 @@ app.post('/generate-and-send', async (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`VisionX Backend active on ${PORT}`));
+app.listen(PORT, '0.0.0.0', () =>
+  console.log(`VisionX Backend active on ${PORT}`)
+);

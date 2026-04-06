@@ -1,7 +1,9 @@
 {
-    "rewrites": [
-      { "source": "/synapse-ai/(.*)", "destination": "/index.html" },
-      { "source": "/((?!assets).*)", "destination": "/index.html" }
-    ]
-  }
-  
+  "rewrites": [
+    { "source": "/synapse-ai/(.*)", "destination": "/index.html" },
+    { "source": "/((?!assets).*)", "destination": "/index.html" },
+
+    { "source": "/generate-and-send", "destination": "https://visionx-e-certificate.onrender.com/generate-and-send" },
+    { "source": "/verify-student", "destination": "https://visionx-e-certificate.onrender.com/verify-student" }
+  ]
+}

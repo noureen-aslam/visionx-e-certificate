@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import './App.css';
 
-const API_BASE = 'https://visionx-e-certificate.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL;
+
 
 // --- COMPONENT 1: The Verification Page (For QR Scans) ---
 const VerifyCertificate = () => {
@@ -69,6 +70,8 @@ const CertificatePortal = () => {
   };
 
   const handleSend = async (e) => {
+   
+
     e.preventDefault();
     setLoading(true);
     try {
